@@ -5,12 +5,13 @@ using UnityEditor;
 using UnityEngine.UIElements;
 
 public class DelegationSystemEditor : EditorWindow
-{   
-    
+{
+    DelegationActor actor;
+    ActorManager actorManager;
     [MenuItem("Window/Binari Studios/Delegation System")]
     public static void ShowWindow(){
         EditorWindow w = EditorWindow.GetWindow(typeof(DelegationSystemEditor));
-        
+
         w.maxSize = new Vector2(500, 160);
         w.minSize = new Vector2(500, 160);
 
@@ -29,7 +30,7 @@ public class DelegationSystemEditor : EditorWindow
         quickButton.RegisterCallback<MouseUpEvent>(ev => {
             GenerateActor(3);
             GenerateLocation(3);
-            GenerateAction(3);    
+            GenerateAction(3);
         });
 
         genActor.RegisterCallback<MouseUpEvent>(ev =>{
@@ -52,8 +53,9 @@ public class DelegationSystemEditor : EditorWindow
         GameObject gameObject;
         for(int i = 0; i < numOfActors; i++){
             gameObject = new GameObject(string.Format("Actor {0}", numActors+1));
-            gameObject.AddComponent<DelegationActor>();
-        }  
+            actor = gameObject.AddComponent<DelegationActor>() as DelegationActor;
+            actor.uid = i;
+        }
     }
 
     public static void GenerateLocation(int numOfLocations){

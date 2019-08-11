@@ -2,7 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DelegationAction : MonoBehaviour
+/// <summary>
+/// This is the super class the Actions will inherit from!
+/// </summary>
+public class DelegationAction
 {
-    public GameObject action;  
 }

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// This is the super class Locations inherit from!
+/// A type of wall that burns slower than others!
 /// </summary>
-public class DelegationLocation
+public class WallA : DelegationLocation
 {
 }
