@@ -2,94 +2,30 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// The DelegationActor is the character or object that gets assigned tasks and delegated.
+/// This actor performs the actions that are described in the DelegationAction class. Those are
+/// user defined, therefore for this actor to perform an action YOU as the client developer must
+/// create Actions that inherit the DelegationAction class.
+/// </summary>
 public class DelegationActor : MonoBehaviour
 {
-    DelegationManager delMnger;
-    ActorManager actorMnger;
+    public DelegationManager delMnger;
+    public ActorManager actorMnger;
     public string actorName;
-    [HideInInspector]
     public int uid; // uid = Unique Identifier
     public GameObject assignedLocation;
     public GameObject assignedAction;
 
-    public static delegate void becameIdle(DelegationActor actor);
-    public static event becameIdle BecameIdle;
-    public static delegate void beganWorking(DelegationActor actor);
-    public static event beganWorking BeganWorking;
-
-    void Awake(){
-        BecameIdle += actorMnger.registerIdleActor;
-        BeganWorking += actorMnger.actorWorks;
-    }
 
     void Start()
     {
         delMnger = GameObject.FindObjectOfType<DelegationManager>();
         actorMnger = GameObject.FindObjectOfType<ActorManager>();
 
-        delMnger.Quit += stopDelegation;
-    }
+        // use the globale game event system to do something.
+        // globalEventSystem.Quit += resetAssignments;
 
-    void update(){
-        if(this.isIdle){
-            actorMnger.registerIdleActor(this);
-        }
-    }
-
-    public void setAction(Action action){
-        this.assignedAction = action;
-    }
-
-    public void setLocation(Location loc){
-        this.assignedLocation = loc;
-    }
-
-    // subscribed method
-    void stopDelegation(){
-        assignedAction = null;
-        assignedLocation = null;
-    }
-
-
-    public void beginAction(){
-
-        // perform the action.  Implmentation of work should be in the action script!
-
-        // notify the manager that you are working
-        BeganWorking(this);
-    }
-
-    void actionCompleted(){
-        // stop doing stuff
-        this.assignedAction = null;
-        this.assignedLocation = null;
-
-        // notify the manager that you are available.
-        BecameIdle(this);
-    }
-
-    void setAction(DelgationAction action){
-        this.assignedAction = action;
-    }
-
-    void setLocation(DelegationLocation loc){
-        this.assignedLocation = loc;
-    }
-
-    bool isAssignedLocation(){
-        if(this.assignedLocation is null){
-            return false;
-        }
-
-        return true;
-    }
-
-    bool isAssignedAction(){
-        if(this.assignedAction is null){
-            return false;
-        }
-
-        return true;
     }
 
     /// <summary>
@@ -98,16 +34,100 @@ public class DelegationActor : MonoBehaviour
     /// but is not done.
     /// </summary>
     /// <returns></returns>
-    int isReady(){
+    public int isReady(){
         int ready = 0;
-        ready += isAssignedAction();
-        ready += isAssignedLocation();
+        ready += isAssignedAction() ? 1 : 0;
+        ready += isAssignedLocation() ? 1 : 0;
         return ready;
     }
-    DelegationAction getAction(){
-        return this.assignedAction;
+
+    public void setAction(GameObject action){
+        this.assignedAction = action;
     }
-    DelegationLocation getLocation(){
-        return this.assignedLocation;
+
+    public void setLocation(GameObject loc){
+        this.assignedLocation = loc;
+    }
+
+
+    public bool isAssignedLocation(){
+        if(this.assignedLocation == null){
+            return false;
+        }
+        return true;
+    }
+
+    public bool isAssignedAction(){
+        if(this.assignedAction == null){
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// This actor is registered idle.
+    /// </summary>
+    public void becameIdle(){
+        this.actorMnger.idleMap.Add(this.uid, this);
+    }
+
+    /// <summary>
+    /// This actor unregistered as idle.
+    /// </summary>
+    public void becameActive(){
+        this.actorMnger.idleMap.Remove(this.uid);
+    }
+
+    /// <summary>
+    /// This actor will begin the performance that is laid out in the DelegationAction!  So
+    /// defining the actions that can be performed as different classes is a must.  Look in the
+    /// ActionScripts folder and define them there.
+    /// </summary>
+    public void beginPerformance(){
+        // do not remove this code.  This makes them not be idle.
+        this.actorMnger.idleMap.Remove(this.uid);
+        // perform with the assigned action.  However this requires moving to the action and doing
+        // something.  This will need to implemented in the specific action!  We pass the
+        // information about the actor that is performing the action so that the action can use
+        // that information. Such as getting the location of what action is to be performed with.
+        this.assignedAction.GetComponent<DelegationAction>().startAction(this.gameObject);
+    }
+
+    /// <summary>
+    /// Stops the actor performing the action and makes them idle...AKA available for
+    /// auto assignment
+    /// </summary>
+    public void stopPerforming(){
+        this.assignedAction.GetComponent<DelegationAction>().stopAction(this.gameObject);
+        this.becameIdle();
+    }
+
+    /// <summary>
+    /// Pause the performance of the actor with the assigned action.
+    /// </summary>
+    public void pausePerformance(){
+        this.assignedAction.GetComponent<DelegationAction>().pauseAction(this.gameObject);
+        this.becameIdle();
+    }
+
+    /// <summary>
+    ///  Resume a paused performance of the actor with the assigned action.
+    /// </summary>
+    public void resumePerformance(){
+        this.assignedAction.GetComponent<DelegationAction>().resumeAction(this.gameObject);
+        this.becameActive();
+    }
+
+    public void performanceCompleted(){
+        this.resetAssignments();
+        this.stopPerforming();
+    }
+
+    /// <summary>
+    /// Reset the actor.
+    /// </summary>
+    public void resetAssignments(){
+        this.assignedAction = null;
+        this.assignedLocation = null;
     }
 }

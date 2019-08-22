@@ -6,7 +6,6 @@ using UnityEngine.UIElements;
 
 public class DelegationSystemEditor : EditorWindow
 {
-    DelegationActor actor;
     ActorManager actorManager;
     [MenuItem("Window/Binari Studios/Delegation System")]
     public static void ShowWindow(){
@@ -31,6 +30,10 @@ public class DelegationSystemEditor : EditorWindow
             GenerateActor(3);
             GenerateLocation(3);
             GenerateAction(3);
+
+            GenerateActorManager();
+            GenerateDelegationManager();
+            GenerateInputManager();
         });
 
         genActor.RegisterCallback<MouseUpEvent>(ev =>{
@@ -50,11 +53,15 @@ public class DelegationSystemEditor : EditorWindow
 
     public static void GenerateActor(int numOfActors){
         var numActors = GameObject.FindObjectsOfType<DelegationActor>().Length;
+        DelegationActor actor;
         GameObject gameObject;
         for(int i = 0; i < numOfActors; i++){
-            gameObject = new GameObject(string.Format("Actor {0}", numActors+1));
+            gameObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            gameObject.tag = "actor";
+            gameObject.name = string.Format("Actor {0}", i+1);
             actor = gameObject.AddComponent<DelegationActor>() as DelegationActor;
             actor.uid = i;
+            gameObject.AddComponent<KnockDownDoor>();
         }
     }
 
@@ -62,8 +69,9 @@ public class DelegationSystemEditor : EditorWindow
         var numLocations = GameObject.FindObjectsOfType<DelegationLocation>().Length;
         GameObject gameObject;
         for(int i = 0; i < numOfLocations; i++){
-            gameObject = new GameObject(string.Format("Location {0}", numLocations+1));
-            gameObject.AddComponent<DelegationLocation>();
+            gameObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            gameObject.tag = "location";
+            gameObject.name = string.Format("Location {0}", i+1);
         }
     }
 
@@ -71,8 +79,35 @@ public class DelegationSystemEditor : EditorWindow
         var numActions = GameObject.FindObjectsOfType<DelegationAction>().Length;
         GameObject gameObject;
         for(int i = 0; i < numOfActions; i++){
-            gameObject = new GameObject(string.Format("Action {0}", numActions+1));
-            gameObject.AddComponent<DelegationAction>();
+            gameObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            gameObject.tag = "action";
+            gameObject.name = string.Format("Action {0}", i+1);
         }
     }
+
+    public static void GenerateInputManager(){
+        GameObject gameObject;
+        InputManager inputManager;
+        var delManager = GameObject.FindObjectOfType<DelegationManager>();
+        gameObject = new GameObject(string.Format("Input Manager"));
+        inputManager = gameObject.AddComponent<InputManager>() as InputManager;
+        inputManager.delegationManager = delManager;
+    }
+
+    public static void GenerateActorManager(){
+        GameObject gameObject;
+        gameObject = new GameObject(string.Format("Actor Manager"));
+        gameObject.AddComponent<ActorManager>();
+    }
+
+    public static void GenerateDelegationManager(){
+        GameObject gameObject;
+        DelegationManager delManager;
+        var actorManager = GameObject.FindObjectOfType<ActorManager>();
+        gameObject = new GameObject(string.Format("Delegation Manager"));
+        delManager = gameObject.AddComponent<DelegationManager>() as DelegationManager;
+        delManager.actorManager = actorManager;
+    }
+
+
 }

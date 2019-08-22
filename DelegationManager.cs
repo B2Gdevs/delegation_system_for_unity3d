@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// The MasterController is the engine of the delegation system. It assigns
-/// the actions, locations, and selects the DelegationActor.
+/// The DelegationManager is the engine of the delegation system. It assigns
+/// the actions, locations, and commnuicates with the ActorManager.
 /// </summary>
 public class DelegationManager : MonoBehaviour
 {
     // only one DelegationManager at a time.
     private static DelegationManager _instance;
     public static DelegationManager Instance { get { return _instance; } }
-    ActorManager actorManager;
+    public ActorManager actorManager;
     public int assigneeId = -1;
 
     private void Awake()
@@ -28,11 +28,18 @@ public class DelegationManager : MonoBehaviour
         actorManager = GameObject.FindObjectOfType<ActorManager>();
     }
 
-    // should be subscribed to an event.  Like a button!
-    public Selection(GameObject target){
+
+    /// <summary>
+    /// This method is the method that needs to be used externally. The input manager should be
+    /// sending selected targets to this method. This means the script where you have your inputs
+    /// going through should have reference to the delegation manager and this method.
+    /// </summary>
+    /// <param name="target"></param>
+    public void Selection(GameObject target){
+        Debug.Log("Selection made for delegation system.");
         switch(target.tag){
 
-            case "untagged":
+            case "Untagged":
                     if(assigneeId == -1){
                         Debug.Log("Character select menu!");
                         // this.newAssignee = characterSelectMenuWhenAvailable();
@@ -47,26 +54,79 @@ public class DelegationManager : MonoBehaviour
                     }
                     break;
             case "actor":
-                    Debug.log("Assigned Character Manually");
-                    assigneeId = target.GetComponent<DelegationActor>().uid;
+                    Debug.Log("Assigned Character Manually");
+                    this.setAssignee(target);
                     break;
             case "location":
-                    if(assigneeId == -1){
-                        assigneeId = actorManager.getIdleActor().uid;
-                    }
-                    actorManager.actorMap[assigneeId].setLocation(target);
+                    this.assignToAssignee(target);
                     break;
             case "action":
-                    if(assigneeId == -1){
-                        assigneeId = actorManager.getIdleActor().uid;
-                    }
-                    actorManager.actorMap[assigneeId].setAction(target);
+                    this.assignToAssignee(target);
+                    break;
         }
 
-        if(actorManager.actorMap[assigneeId].isReady() == 2){
-            Debug.log("All assignments have been set.  Begin action!");
-            actorManager.actorMap[assigneeId].beginAction();
+        if(this.isAssigneeReady()){
+            this.assigneePerforms();
+        }
+    }
+
+    /// <summary>
+    /// Checks if the actor assigned is ready to perform.
+    /// </summary>
+    /// <returns></returns>
+    private bool isAssigneeReady(){
+        if(this.assigneeId != -1){
+            return this.actorManager.actorMap[this.assigneeId].isReady() == 2;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// The actor begins their their performance using the assigned action and locations.  Remember
+    /// to manually create Actions!!
+    /// </summary>
+    private void assigneePerforms(){
+        Debug.Log($"Assignee with uid of {this.assigneeId} begins work.");
+        // This will throw errors if actions have not been assigned!
+        this.actorManager.actorMap[this.assigneeId].beginPerformance();
+        this.assigneeId = -1;
+    }
+
+    private void autoAssign(){
+        this.assigneeId = this.actorManager.getIdleActor().uid;
+        Debug.Log("AutoAssigned " + this.assigneeId.ToString());
+
+    }
+
+    /// <summary>
+    /// Assigns the target gameobject to the actor that has been selected for delegation!  If no
+    /// actor has been selected one will be selected for you if they are available.
+    /// </summary>
+    /// <param name="target"></param>
+    private void assignToAssignee(GameObject target){
+        if(this.assigneeId == -1){
+            this.autoAssign();
+        }
+
+        if(target.tag == "action"){
+            this.actorManager.actorMap[this.assigneeId].setAction(target);
+        } else if(target.tag == "location"){
+            this.actorManager.actorMap[this.assigneeId].setLocation(target);
         }
 
     }
+
+    /// <summary>
+    /// On the chance that a user selects another actor during the selections, this method
+    /// will remove the assigned actions and the assigned location from the previously selected
+    /// actor and the new actor will need to start being assigned.
+    /// </summary>
+    /// <param name="target"></param>
+    private void setAssignee(GameObject target){
+        if(this.assigneeId != -1 && this.assigneeId != target.GetComponent<DelegationActor>().uid){
+            this.actorManager.actorMap[this.assigneeId].resetAssignments();
+        }
+        this.assigneeId = target.GetComponent<DelegationActor>().uid;
+    }
+
 }

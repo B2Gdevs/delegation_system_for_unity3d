@@ -5,6 +5,7 @@ using UnityEngine;
 /// <summary>
 /// This is the super class Locations inherit from!
 /// </summary>
-public class DelegationLocation
+public abstract class DelegationLocation : MonoBehaviour
 {
+
 }
